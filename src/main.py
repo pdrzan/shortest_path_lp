@@ -1,3 +1,4 @@
+import os
 import sys
 import glpk
 import warnings
@@ -41,7 +42,7 @@ def print_no_solution():
     print('The problem has no feasible solution!')
     print('Reavaluate the arguments and instance passed and try again!')
 
-def solve(n, m, s, t, A):
+def solve(n, m, s, t, A, instance_name):
     lp = glpk.LPX()
 
     lp.name = 'Shortest path problem'
@@ -65,6 +66,8 @@ def solve(n, m, s, t, A):
         obj[index] = c
 
     for i in range(n):
+        lp.rows[i].name = "cons_%d" % i
+
         if i == s: lp.rows[i].bounds = 1, 1
         elif i == t: lp.rows[i].bounds = -1, -1
         else: lp.rows[i].bounds = 0, 0
@@ -77,6 +80,10 @@ def solve(n, m, s, t, A):
     if(lp.status == 'opt'): print_solution(lp)
     else: print_no_solution()
 
+    if(not os.path.exists('output')): os.makedirs('output')
+    lp.write(cpxlp=f'output/{instance_name}.lp')
+    lp.write(sol=f'output/{instance_name}.sol')
+
 def main():
     args = sys.argv[1:]
 
@@ -88,6 +95,7 @@ def main():
     instance_file_path = args[0]
     instance_content = read_file(instance_file_path)
     instance_lines = instance_content.split('\n')
+    instance_name = os.path.basename(instance_file_path)
 
     s, t = int(args[1]), int(args[2])
 
@@ -109,6 +117,6 @@ def main():
             
     if instance_lines[-1][0] != 'T': instance_with_wrong_format_error()
 
-    solve(n, m, s, t, A)
+    solve(n, m, s, t, A, instance_name)
 
 main()
